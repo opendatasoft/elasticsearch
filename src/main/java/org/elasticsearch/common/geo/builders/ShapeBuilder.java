@@ -240,6 +240,11 @@ public abstract class ShapeBuilder implements ToXContent {
      *             XContentParser
      */
     private static CoordinateNode parseCoordinates(XContentParser parser) throws IOException {
+        /** http://geojson.org/geojson-spec.html#positions
+         *  A position is represented by an array of numbers.
+         *  There must be at least two elements, and may be more
+         */
+
         XContentParser.Token token = parser.nextToken();
 
         // Base cases
@@ -249,7 +254,10 @@ public abstract class ShapeBuilder implements ToXContent {
             double lon = parser.doubleValue();
             token = parser.nextToken();
             double lat = parser.doubleValue();
-            token = parser.nextToken();
+            // Only lon and lat elements are parsed, others (if any) are skipped
+            while (token != XContentParser.Token.END_ARRAY) {
+                token = parser.nextToken();
+            }
             return new CoordinateNode(new Coordinate(lon, lat));
         } else if (token == XContentParser.Token.VALUE_NULL) {
             throw new ElasticsearchIllegalArgumentException("coordinates cannot contain NULL values)");
