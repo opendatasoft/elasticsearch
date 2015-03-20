@@ -20,12 +20,14 @@
 package org.elasticsearch.common.geo.builders;
 
 import com.spatial4j.core.context.jts.JtsSpatialContext;
+import com.spatial4j.core.exception.InvalidShapeException;
 import com.spatial4j.core.shape.Shape;
 import com.spatial4j.core.shape.jts.JtsGeometry;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import org.apache.commons.lang3.tuple.Pair;
+import com.vividsolutions.jts.operation.valid.IsValidOp;
 import org.elasticsearch.ElasticsearchIllegalArgumentException;
 import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.common.logging.ESLogger;
@@ -91,8 +93,12 @@ public abstract class ShapeBuilder implements ToXContent {
     protected JtsGeometry jtsGeometry(Geometry geom) {
         //dateline180Check is false because ElasticSearch does it's own dateline wrapping
         JtsGeometry jtsGeometry = new JtsGeometry(geom, SPATIAL_CONTEXT, false, multiPolygonMayOverlap);
-        if (autoValidateJtsGeometry)
-            jtsGeometry.validate();
+        if (autoValidateJtsGeometry) {
+            IsValidOp isValidOp = new IsValidOp(geom);
+            isValidOp.setSelfTouchingRingFormingHoleValid(true);
+            if (!isValidOp.isValid())
+                throw new InvalidShapeException(isValidOp.getValidationError().toString());
+        }
         if (autoIndexJtsGeometry)
             jtsGeometry.index();
         return jtsGeometry;
@@ -243,7 +249,7 @@ public abstract class ShapeBuilder implements ToXContent {
         XContentParser.Token token = parser.nextToken();
 
         // Base cases
-        if (token != XContentParser.Token.START_ARRAY && 
+        if (token != XContentParser.Token.START_ARRAY &&
                 token != XContentParser.Token.END_ARRAY && 
                 token != XContentParser.Token.VALUE_NULL) {
             double lon = parser.doubleValue();
