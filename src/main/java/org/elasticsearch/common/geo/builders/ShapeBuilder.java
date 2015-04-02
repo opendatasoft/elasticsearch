@@ -460,7 +460,8 @@ public abstract class ShapeBuilder implements ToXContent {
 
         protected Edge(Coordinate coordinate, Edge next, Coordinate intersection) {
             this.coordinate = coordinate;
-            this.next = next;
+            // use setter to catch duplicate point cases
+            this.setNext(next);
             this.intersect = intersection;
             if (next != null) {
                 this.component = next.component;
@@ -469,6 +470,17 @@ public abstract class ShapeBuilder implements ToXContent {
 
         protected Edge(Coordinate coordinate, Edge next) {
             this(coordinate, next, Edge.MAX_COORDINATE);
+        }
+
+        protected void setNext(Edge next) {
+            // don't bother setting next if its null
+            if (next != null) {
+                // self-loop throws an invalid shape
+                if (this.coordinate.equals(next.coordinate)) {
+                    throw new InvalidShapeException("Provided shape has duplicate consecutive coordinates at: " + this.coordinate);
+                }
+                this.next = next;
+            }
         }
 
         private static final int top(Coordinate[] points, int offset, int length) {
@@ -536,17 +548,19 @@ public abstract class ShapeBuilder implements ToXContent {
                 if (direction) {
                     edges[edgeOffset + i] = new Edge(points[pointOffset + i], edges[edgeOffset + i - 1]);
                     edges[edgeOffset + i].component = component;
-                } else {
+                } else if(!edges[edgeOffset + i - 1].coordinate.equals(points[pointOffset + i])) {
                     edges[edgeOffset + i - 1].next = edges[edgeOffset + i] = new Edge(points[pointOffset + i], null);
                     edges[edgeOffset + i - 1].component = component;
+                } else {
+                    throw new InvalidShapeException("Provided shape has duplicate consecutive coordinates at: " + points[pointOffset + i]);
                 }
             }
 
             if (direction) {
-                edges[edgeOffset].next = edges[edgeOffset + length - 1];
+                edges[edgeOffset].setNext(edges[edgeOffset + length - 1]);
                 edges[edgeOffset].component = component;
             } else {
-                edges[edgeOffset + length - 1].next = edges[edgeOffset];
+                edges[edgeOffset + length - 1].setNext(edges[edgeOffset]);
                 edges[edgeOffset + length - 1].component = component;
             }
 
