@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.elasticsearch</groupId>
     <artifactId>elasticsearch</artifactId>
-    <version>1.4.4-patched-ffba64099</version>
+    <version>1.4.4-patched-db913f70b</version>
     <packaging>jar</packaging>
     <description>Elasticsearch - Open Source, Distributed, RESTful Search Engine</description>
     <inceptionYear>2009</inceptionYear>
