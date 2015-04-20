@@ -293,7 +293,7 @@ public abstract class BasePolygonBuilder<E extends BasePolygonBuilder<E>> extend
 
             if (edges != null) {
                 // found a closed loop - we have two connected components so we need to slice into two distinct components
-                if (visitedEdge.containsKey(current.coordinate) && ! current.coordinate.equals(prev.coordinate)) {
+                if (visitedEdge.containsKey(current.coordinate) && (!current.coordinate.equals(prev.coordinate) && (!current.coordinate.equals(current.next.coordinate)))) {
                     if (connectedComponents > 0 && current.next != edge) {
                         throw new InvalidShapeException("Shape contains more than one tangential point");
                     }
