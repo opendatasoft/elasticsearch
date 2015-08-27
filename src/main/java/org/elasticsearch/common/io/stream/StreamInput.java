@@ -26,6 +26,7 @@ import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.text.StringAndBytesText;
 import org.elasticsearch.common.text.StringText;
 import org.elasticsearch.common.text.Text;
@@ -430,9 +431,15 @@ public abstract class StreamInput extends InputStream {
                 return readFloatArray();
             case 20:
                 return readDoubleArray();
+            case 21:
+                return readGeoPoint();
             default:
                 throw new IOException("Can't read unknown type [" + type + "]");
         }
+    }
+
+    public GeoPoint readGeoPoint() throws IOException {
+        return new GeoPoint(readDouble(), readDouble());
     }
 
     public int[] readIntArray() throws IOException {
