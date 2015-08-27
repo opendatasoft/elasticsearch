@@ -24,6 +24,7 @@ import org.apache.lucene.util.BytesRefBuilder;
 import org.elasticsearch.Version;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.text.Text;
 import org.joda.time.ReadableInstant;
 
@@ -411,6 +412,10 @@ public abstract class StreamOutput extends OutputStream {
         } else if (type == double[].class) {
             writeByte((byte) 20);
             writeDoubleArray((double[]) value);
+        } else if (type == GeoPoint.class) {
+            writeByte((byte) 21);
+            writeDouble(((GeoPoint)value).lat());
+            writeDouble(((GeoPoint)value).lon());
         } else {
             throw new IOException("Can't write type [" + type + "]");
         }
