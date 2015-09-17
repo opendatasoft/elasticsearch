@@ -50,6 +50,7 @@ public class DateHistogramParser implements Aggregator.Parser {
     static final ParseField POST_ZONE = new ParseField("post_zone").withAllDeprecated("time_zone");
     static final ParseField TIME_ZONE = new ParseField("time_zone");
     static final ParseField INTERVAL = new ParseField("interval");
+    public static final ParseField REQUIRED_SIZE_FIELD_NAME = new ParseField("size");
     static final ParseField PRE_ZONE_ADJUST = new ParseField("pre_zone_adjust_large_interval").withAllDeprecated("");
 
 
@@ -91,6 +92,7 @@ public class DateHistogramParser implements Aggregator.Parser {
 
         boolean keyed = false;
         long minDocCount = 1;
+        long size = -1;
         ExtendedBounds extendedBounds = null;
         InternalOrder order = (InternalOrder) Histogram.Order.KEY_ASC;
         String interval = null;
@@ -143,6 +145,8 @@ public class DateHistogramParser implements Aggregator.Parser {
                     preZone = DateTimeZone.forOffsetHours(parser.intValue());
                 } else if (POST_ZONE.match(currentFieldName)) {
                     postZone = DateTimeZone.forOffsetHours(parser.intValue());
+                } else if(REQUIRED_SIZE_FIELD_NAME.match(currentFieldName)) {
+                    size = parser.intValue();
                 } else {
                     throw new SearchParseException(context, "Unknown key for a " + token + " in [" + aggregationName + "]: [" + currentFieldName + "].");
                 }
@@ -211,7 +215,7 @@ public class DateHistogramParser implements Aggregator.Parser {
                 .preOffset(preOffset).postOffset(postOffset)
                 .build();
 
-        return new HistogramAggregator.Factory(aggregationName, vsParser.config(), rounding, order, keyed, minDocCount, extendedBounds, InternalDateHistogram.FACTORY);
+        return new HistogramAggregator.Factory(aggregationName, vsParser.config(), rounding, order, keyed, minDocCount, size, extendedBounds, InternalDateHistogram.FACTORY);
 
     }
 
