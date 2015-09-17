@@ -37,6 +37,7 @@ import java.io.IOException;
 public class HistogramParser implements Aggregator.Parser {
 
     static final ParseField EXTENDED_BOUNDS = new ParseField("extended_bounds");
+    public static final ParseField REQUIRED_SIZE_FIELD_NAME = new ParseField("size");
 
     @Override
     public String type() {
@@ -53,6 +54,7 @@ public class HistogramParser implements Aggregator.Parser {
 
         boolean keyed = false;
         long minDocCount = 1;
+        long size = -1;
         InternalOrder order = (InternalOrder) InternalOrder.KEY_ASC;
         long interval = -1;
         ExtendedBounds extendedBounds = null;
@@ -71,6 +73,8 @@ public class HistogramParser implements Aggregator.Parser {
                     interval = parser.longValue();
                 } else if ("min_doc_count".equals(currentFieldName) || "minDocCount".equals(currentFieldName)) {
                     minDocCount = parser.longValue();
+                } else if ("size".equals(currentFieldName)) {
+                    size = parser.longValue();
                 } else if ("keyed".equals(currentFieldName)) {
                     keyed = parser.booleanValue();
                 } else if ("pre_offset".equals(currentFieldName) || "preOffset".equals(currentFieldName)) {
@@ -132,7 +136,7 @@ public class HistogramParser implements Aggregator.Parser {
             extendedBounds.processAndValidate(aggregationName, context, ValueParser.RAW);
         }
 
-        return new HistogramAggregator.Factory(aggregationName, vsParser.config(), rounding, order, keyed, minDocCount, extendedBounds, InternalHistogram.FACTORY);
+        return new HistogramAggregator.Factory(aggregationName, vsParser.config(), rounding, order, keyed, minDocCount, size, extendedBounds, InternalHistogram.FACTORY);
 
     }
 
