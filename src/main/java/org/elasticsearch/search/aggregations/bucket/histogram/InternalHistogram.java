@@ -347,11 +347,11 @@ public class InternalHistogram<B extends InternalHistogram.Bucket> extends Inter
             CollectionUtil.introSort(reducedBuckets, order.comparator());
         }
 
-        if (size >=0) {
+        if (size > 0) {
             final int minSize = (int) Math.min(size, reducedBuckets.size());
             List<B> reducedSizeBuckets = new ArrayList<>(minSize);
 
-            for (int i=0; i<minSize;i++) {
+            for (int i=0; i < minSize; i++) {
                 reducedSizeBuckets.add(reducedBuckets.get(i));
             }
             reducedBuckets = reducedSizeBuckets;
@@ -369,7 +369,7 @@ public class InternalHistogram<B extends InternalHistogram.Bucket> extends Inter
         name = in.readString();
         order = InternalOrder.Streams.readOrder(in);
         minDocCount = in.readVLong();
-        size = in.readVLong();
+        size = in.readLong();
         if (minDocCount == 0) {
             emptyBucketInfo = EmptyBucketInfo.readFrom(in);
         }
@@ -389,7 +389,7 @@ public class InternalHistogram<B extends InternalHistogram.Bucket> extends Inter
         out.writeString(name);
         InternalOrder.Streams.writeOrder(order, out);
         out.writeVLong(minDocCount);
-        out.writeVLong(size);
+        out.writeLong(size);
         if (minDocCount == 0) {
             EmptyBucketInfo.writeTo(emptyBucketInfo, out);
         }
