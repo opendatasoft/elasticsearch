@@ -114,8 +114,10 @@ public class HistogramAggregator extends BucketsAggregator {
     @Override
     public InternalAggregation buildAggregation(long owningBucketOrdinal) {
         assert owningBucketOrdinal == 0;
+        long otherDocCount = 0;
         List<InternalHistogram.Bucket> buckets = new ArrayList<>((int) bucketOrds.size());
         for (long i = 0; i < bucketOrds.size(); i++) {
+            otherDocCount += bucketDocCount(i);
             buckets.add(histogramFactory.createBucket(rounding.valueForKey(bucketOrds.get(i)), bucketDocCount(i), bucketAggregations(i), formatter));
         }
 
@@ -123,13 +125,13 @@ public class HistogramAggregator extends BucketsAggregator {
 
         // value source will be null for unmapped fields
         InternalHistogram.EmptyBucketInfo emptyBucketInfo = minDocCount == 0 ? new InternalHistogram.EmptyBucketInfo(rounding, buildEmptySubAggregations(), extendedBounds) : null;
-        return histogramFactory.create(name, buckets, order, minDocCount, size, emptyBucketInfo, formatter, keyed);
+        return histogramFactory.create(name, buckets, order, minDocCount, size, emptyBucketInfo, formatter, keyed, otherDocCount);
     }
 
     @Override
     public InternalAggregation buildEmptyAggregation() {
         InternalHistogram.EmptyBucketInfo emptyBucketInfo = minDocCount == 0 ? new InternalHistogram.EmptyBucketInfo(rounding, buildEmptySubAggregations(), extendedBounds) : null;
-        return histogramFactory.create(name, Collections.emptyList(), order, minDocCount, size, emptyBucketInfo, formatter, keyed);
+        return histogramFactory.create(name, Collections.emptyList(), order, minDocCount, size, emptyBucketInfo, formatter, keyed, 0);
     }
 
     @Override

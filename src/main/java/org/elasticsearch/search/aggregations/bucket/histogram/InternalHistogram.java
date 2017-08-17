@@ -47,6 +47,7 @@ import java.util.ListIterator;
  */
 public class InternalHistogram<B extends InternalHistogram.Bucket> extends InternalAggregation implements Histogram {
 
+    protected static final String SUM_OF_OTHER_DOC_COUNTS = "sum_other_doc_count";
     final static Type TYPE = new Type("histogram", "histo");
     final static Factory FACTORY = new Factory();
 
@@ -190,8 +191,9 @@ public class InternalHistogram<B extends InternalHistogram.Bucket> extends Inter
         }
 
         public InternalHistogram<B> create(String name, List<B> buckets, InternalOrder order, long minDocCount, long size,
-                                           EmptyBucketInfo emptyBucketInfo, @Nullable ValueFormatter formatter, boolean keyed) {
-            return new InternalHistogram<>(name, buckets, order, minDocCount, size, emptyBucketInfo, formatter, keyed);
+                                           EmptyBucketInfo emptyBucketInfo, @Nullable ValueFormatter formatter,
+                                           boolean keyed, long otherDocCount) {
+            return new InternalHistogram<>(name, buckets, order, minDocCount, size, emptyBucketInfo, formatter, keyed, otherDocCount);
         }
 
         public B createBucket(long key, long docCount, InternalAggregations aggregations, @Nullable ValueFormatter formatter) {
@@ -206,13 +208,14 @@ public class InternalHistogram<B extends InternalHistogram.Bucket> extends Inter
     private @Nullable ValueFormatter formatter;
     private boolean keyed;
     private long minDocCount;
+    private long otherDocCount;
     private long size;
     private EmptyBucketInfo emptyBucketInfo;
 
     InternalHistogram() {} // for serialization
 
     InternalHistogram(String name, List<B> buckets, InternalOrder order, long minDocCount, long size,
-                      EmptyBucketInfo emptyBucketInfo, @Nullable ValueFormatter formatter, boolean keyed) {
+                      EmptyBucketInfo emptyBucketInfo, @Nullable ValueFormatter formatter, boolean keyed, long otherDocCount) {
         super(name);
         this.buckets = buckets;
         this.order = order;
@@ -222,6 +225,7 @@ public class InternalHistogram<B extends InternalHistogram.Bucket> extends Inter
         this.emptyBucketInfo = emptyBucketInfo;
         this.formatter = formatter;
         this.keyed = keyed;
+        this.otherDocCount = otherDocCount;
     }
 
     @Override
@@ -250,6 +254,10 @@ public class InternalHistogram<B extends InternalHistogram.Bucket> extends Inter
         return bucketsMap.get(key.longValue());
     }
 
+    public long getSumOfOtherDocCounts() {
+        return otherDocCount;
+    }
+
     protected Factory<B> getFactory() {
         return FACTORY;
     }
@@ -258,9 +266,12 @@ public class InternalHistogram<B extends InternalHistogram.Bucket> extends Inter
     public InternalAggregation reduce(ReduceContext reduceContext) {
         List<InternalAggregation> aggregations = reduceContext.aggregations();
 
+        long otherDocCount = 0;
+
         LongObjectPagedHashMap<List<B>> bucketsByKey = new LongObjectPagedHashMap<>(reduceContext.bigArrays());
         for (InternalAggregation aggregation : aggregations) {
             InternalHistogram<B> histogram = (InternalHistogram) aggregation;
+            otherDocCount += histogram.getSumOfOtherDocCounts();
             for (B bucket : histogram.buckets) {
                 List<B> bucketList = bucketsByKey.get(bucket.key);
                 if (bucketList == null) {
@@ -353,11 +364,14 @@ public class InternalHistogram<B extends InternalHistogram.Bucket> extends Inter
 
             for (int i=0; i < minSize; i++) {
                 reducedSizeBuckets.add(reducedBuckets.get(i));
+                otherDocCount -= reducedBuckets.get(i).docCount;
             }
             reducedBuckets = reducedSizeBuckets;
+        } else {
+            otherDocCount = 0;
         }
 
-        return getFactory().create(getName(), reducedBuckets, order, minDocCount, size, emptyBucketInfo, formatter, keyed);
+        return getFactory().create(getName(), reducedBuckets, order, minDocCount, size, emptyBucketInfo, formatter, keyed, otherDocCount);
     }
 
     protected B createBucket(long key, long docCount, InternalAggregations aggregations, @Nullable ValueFormatter formatter) {
@@ -373,6 +387,7 @@ public class InternalHistogram<B extends InternalHistogram.Bucket> extends Inter
         if (minDocCount == 0) {
             emptyBucketInfo = EmptyBucketInfo.readFrom(in);
         }
+        this.otherDocCount = in.readVLong();
         formatter = ValueFormatterStreams.readOptional(in);
         keyed = in.readBoolean();
         int size = in.readVInt();
@@ -393,6 +408,7 @@ public class InternalHistogram<B extends InternalHistogram.Bucket> extends Inter
         if (minDocCount == 0) {
             EmptyBucketInfo.writeTo(emptyBucketInfo, out);
         }
+        out.writeVLong(otherDocCount);
         ValueFormatterStreams.writeOptional(formatter, out);
         out.writeBoolean(keyed);
         out.writeVInt(buckets.size());
@@ -405,6 +421,7 @@ public class InternalHistogram<B extends InternalHistogram.Bucket> extends Inter
 
     @Override
     public XContentBuilder doXContentBody(XContentBuilder builder, Params params) throws IOException {
+        builder.field(SUM_OF_OTHER_DOC_COUNTS, otherDocCount);
         if (keyed) {
             builder.startObject(CommonFields.BUCKETS);
         } else {

@@ -62,6 +62,11 @@ public interface Histogram extends MultiBucketsAggregation {
      */
     Bucket getBucketByKey(Number key);
 
+    /**
+     * Return the sum of the document counts of all buckets that did not make
+     * it to the top buckets.
+     */
+    long getSumOfOtherDocCounts();
 
     /**
      * A strategy defining the order in which the buckets in this histogram are ordered.
