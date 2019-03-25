@@ -73,6 +73,7 @@ public class ICUCollationKeywordFieldMapper extends FieldMapper {
         }
 
         public static final String NULL_VALUE = null;
+        public static final int IGNORE_ABOVE = Integer.MAX_VALUE;
     }
 
     public static final class CollationFieldType extends StringFieldType {
@@ -237,6 +238,7 @@ public class ICUCollationKeywordFieldMapper extends FieldMapper {
         private String variableTop = null;
         private boolean hiraganaQuaternaryMode = false;
         private String nullValue = Defaults.NULL_VALUE;
+        protected int ignoreAbove = Defaults.IGNORE_ABOVE;
 
         public Builder(String name) {
             super(name, Defaults.FIELD_TYPE, Defaults.FIELD_TYPE);
@@ -256,6 +258,14 @@ public class ICUCollationKeywordFieldMapper extends FieldMapper {
             }
 
             return super.indexOptions(indexOptions);
+        }
+
+        public Builder ignoreAbove(int ignoreAbove) {
+            if (ignoreAbove < 0) {
+                throw new IllegalArgumentException("[ignore_above] must be positive, got " + ignoreAbove);
+            }
+            this.ignoreAbove = ignoreAbove;
+            return this;
         }
 
         public String rules() {
@@ -469,7 +479,7 @@ public class ICUCollationKeywordFieldMapper extends FieldMapper {
             setupFieldType(context);
             return new ICUCollationKeywordFieldMapper(name, fieldType, defaultFieldType, context.indexSettings(),
                 multiFieldsBuilder.build(this, context), copyTo, rules, language, country, variant, strength, decomposition,
-                alternate, caseLevel, caseFirst, numeric, variableTop, hiraganaQuaternaryMode, collator);
+                alternate, caseLevel, caseFirst, numeric, variableTop, hiraganaQuaternaryMode, ignoreAbove, collator);
         }
     }
 
@@ -543,6 +553,10 @@ public class ICUCollationKeywordFieldMapper extends FieldMapper {
                         builder.hiraganaQuaternaryMode(XContentMapValues.nodeBooleanValue(fieldNode, false));
                         iterator.remove();
                         break;
+                    case "ignore_above":
+                        builder.ignoreAbove(XContentMapValues.nodeIntegerValue(fieldNode, -1));
+                        iterator.remove();
+                        break;
                     default:
                         break;
                 }
@@ -564,6 +578,7 @@ public class ICUCollationKeywordFieldMapper extends FieldMapper {
     private final boolean numeric;
     private final String variableTop;
     private final boolean hiraganaQuaternaryMode;
+    private int ignoreAbove;
     private final Collator collator;
     private final BiFunction<String, BytesRef, Field> getDVField;
 
@@ -571,7 +586,8 @@ public class ICUCollationKeywordFieldMapper extends FieldMapper {
                                              Settings indexSettings, MultiFields multiFields, CopyTo copyTo, String rules, String language,
                                              String country, String variant,
                                              String strength, String decomposition, String alternate, boolean caseLevel, String caseFirst,
-                                             boolean numeric, String variableTop, boolean hiraganaQuaternaryMode, Collator collator) {
+                                             boolean numeric, String variableTop, boolean hiraganaQuaternaryMode,
+                                             int ignoreAbove, Collator collator) {
         super(simpleName, fieldType, defaultFieldType, indexSettings, multiFields, copyTo);
         assert collator.isFrozen();
         this.rules = rules;
@@ -586,6 +602,7 @@ public class ICUCollationKeywordFieldMapper extends FieldMapper {
         this.numeric = numeric;
         this.variableTop = variableTop;
         this.hiraganaQuaternaryMode = hiraganaQuaternaryMode;
+        this.ignoreAbove = ignoreAbove;
         this.collator = collator;
         if (indexCreatedVersion.onOrAfter(Version.V_5_6_0)) {
             getDVField = SortedSetDocValuesField::new;
@@ -659,6 +676,10 @@ public class ICUCollationKeywordFieldMapper extends FieldMapper {
             conflicts.add("Cannot update hiragana_quaternary_mode setting for [" + CONTENT_TYPE + "]");
         }
 
+        if (ignoreAbove != icuMergeWith.ignoreAbove) {
+            conflicts.add("Cannot update ignore_above settings for [" + CONTENT_TYPE + "]");
+        }
+
         if (!conflicts.isEmpty()) {
             throw new IllegalArgumentException("Can't merge because of conflicts: " + conflicts);
         }
@@ -719,6 +740,10 @@ public class ICUCollationKeywordFieldMapper extends FieldMapper {
         if (includeDefaults || hiraganaQuaternaryMode) {
             builder.field("hiragana_quaternary_mode", hiraganaQuaternaryMode);
         }
+
+        if (includeDefaults || ignoreAbove != Defaults.IGNORE_ABOVE) {
+            builder.field("ignore_above", ignoreAbove);
+        }
     }
 
     @Override
@@ -735,7 +760,7 @@ public class ICUCollationKeywordFieldMapper extends FieldMapper {
             }
         }
 
-        if (value == null) {
+        if (value == null || value.length() > ignoreAbove) {
             return;
         }
 
