@@ -415,7 +415,7 @@ public class ICUCollationKeywordFieldMapperTests extends ESSingleNodeTestCase {
 
         assertEquals(mapping, mapper.mappingSource().toString());
 
-        ParsedDocument doc = mapper.parse(new SourceToParse("test", "type", "1", BytesReference
+        ParsedDocument doc = mapper.parse(SourceToParse.source("test", "type", "1", BytesReference
             .bytes(XContentFactory.jsonBuilder()
                 .startObject()
                 .field("field", "elk")
@@ -425,7 +425,7 @@ public class ICUCollationKeywordFieldMapperTests extends ESSingleNodeTestCase {
         IndexableField[] fields = doc.rootDoc().getFields("field");
         assertEquals(2, fields.length);
 
-        doc = mapper.parse(new SourceToParse("test", "type", "1", BytesReference
+        doc = mapper.parse(SourceToParse.source("test", "type", "1", BytesReference
             .bytes(XContentFactory.jsonBuilder()
                 .startObject()
                 .field("field", "elasticsearch")
@@ -441,13 +441,13 @@ public class ICUCollationKeywordFieldMapperTests extends ESSingleNodeTestCase {
             .startObject("properties").startObject("field").field("type", FIELD_TYPE).endObject().endObject()
             .endObject().endObject());
 
-        indexService.mapperService().merge("type", new CompressedXContent(mapping), MergeReason.MAPPING_UPDATE);
+        indexService.mapperService().merge("type", new CompressedXContent(mapping), MergeReason.MAPPING_UPDATE, false);
 
         mapping = Strings.toString(XContentFactory.jsonBuilder().startObject().startObject("type")
             .startObject("properties").startObject("field").field("type", FIELD_TYPE)
             .field("ignore_above", 5).endObject().endObject()
             .endObject().endObject());
-        indexService.mapperService().merge("type", new CompressedXContent(mapping), MergeReason.MAPPING_UPDATE);
+        indexService.mapperService().merge("type", new CompressedXContent(mapping), MergeReason.MAPPING_UPDATE, false);
     }
 
 }
