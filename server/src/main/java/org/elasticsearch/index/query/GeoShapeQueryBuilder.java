@@ -20,7 +20,7 @@
 package org.elasticsearch.index.query;
 
 import org.apache.logging.log4j.LogManager;
-import org.apache.lucene.document.LatLonShape;
+import org.apache.lucene.document.XLatLonShape;
 import org.apache.lucene.geo.Line;
 import org.apache.lucene.geo.Polygon;
 import org.apache.lucene.search.BooleanClause;
@@ -485,7 +485,7 @@ public class GeoShapeQueryBuilder extends AbstractQueryBuilder<GeoShapeQueryBuil
 
             @Override
             public Query visit(org.elasticsearch.geo.geometry.Line line) {
-                return LatLonShape.newLineQuery(fieldName(), relation.getLuceneRelation(), new Line(line.getLats(), line.getLons()));
+                return XLatLonShape.newLineQuery(fieldName(), relation.getLuceneRelation(), new Line(line.getLats(), line.getLons()));
             }
 
             @Override
@@ -499,7 +499,7 @@ public class GeoShapeQueryBuilder extends AbstractQueryBuilder<GeoShapeQueryBuil
                 for (int i=0; i<multiLine.size(); i++) {
                     lines[i] = new Line(multiLine.get(i).getLats(), multiLine.get(i).getLons());
                 }
-                return LatLonShape.newLineQuery(fieldName(), relation.getLuceneRelation(), lines);
+                return XLatLonShape.newLineQuery(fieldName(), relation.getLuceneRelation(), lines);
             }
 
             @Override
@@ -514,23 +514,23 @@ public class GeoShapeQueryBuilder extends AbstractQueryBuilder<GeoShapeQueryBuil
                 for (int i=0; i<multiPolygon.size(); i++) {
                     polygons[i] = toLucenePolygon(multiPolygon.get(i));
                 }
-                return LatLonShape.newPolygonQuery(fieldName(), relation.getLuceneRelation(), polygons);
+                return XLatLonShape.newPolygonQuery(fieldName(), relation.getLuceneRelation(), polygons);
             }
 
             @Override
             public Query visit(Point point) {
-                return LatLonShape.newBoxQuery(fieldName, relation.getLuceneRelation(),
+                return XLatLonShape.newBoxQuery(fieldName, relation.getLuceneRelation(),
                     point.getLat(), point.getLat(), point.getLon(), point.getLon());
             }
 
             @Override
             public Query visit(org.elasticsearch.geo.geometry.Polygon polygon) {
-                return LatLonShape.newPolygonQuery(fieldName(), relation.getLuceneRelation(), toLucenePolygon(polygon));
+                return XLatLonShape.newPolygonQuery(fieldName(), relation.getLuceneRelation(), toLucenePolygon(polygon));
             }
 
             @Override
             public Query visit(org.elasticsearch.geo.geometry.Rectangle r) {
-                return LatLonShape.newBoxQuery(fieldName(), relation.getLuceneRelation(),
+                return XLatLonShape.newBoxQuery(fieldName(), relation.getLuceneRelation(),
                     r.getMinLat(), r.getMaxLat(), r.getMinLon(), r.getMaxLon());
             }
         });
