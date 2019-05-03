@@ -19,7 +19,7 @@
 package org.elasticsearch.index.mapper;
 
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.LatLonShape;
+import org.apache.lucene.document.XLatLonShape;
 import org.apache.lucene.geo.Line;
 import org.apache.lucene.geo.Polygon;
 import org.apache.lucene.index.IndexableField;
@@ -42,7 +42,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
- * FieldMapper for indexing {@link LatLonShape}s.
+ * FieldMapper for indexing {@link XLatLonShape}s.
  * <p>
  * Currently Shapes can only be indexed and can only be queried using
  * {@link org.elasticsearch.index.query.GeoShapeQueryBuilder}, consequently
@@ -104,7 +104,7 @@ public class GeoShapeFieldMapper extends BaseGeoShapeFieldMapper {
         return (GeoShapeFieldType) super.fieldType();
     }
 
-    /** parsing logic for {@link LatLonShape} indexing */
+    /** parsing logic for {@link XLatLonShape} indexing */
     @Override
     public void parse(ParseContext context) throws IOException {
         try {
@@ -156,7 +156,7 @@ public class GeoShapeFieldMapper extends BaseGeoShapeFieldMapper {
 
         @Override
         public Void visit(org.elasticsearch.geo.geometry.Line line) {
-            indexFields(context, LatLonShape.createIndexableFields(name(), new Line(line.getLats(), line.getLons())));
+            indexFields(context, XLatLonShape.createIndexableFields(name(), new Line(line.getLats(), line.getLons())));
             return null;
         }
 
@@ -191,13 +191,13 @@ public class GeoShapeFieldMapper extends BaseGeoShapeFieldMapper {
 
         @Override
         public Void visit(Point point) {
-            indexFields(context, LatLonShape.createIndexableFields(name(), point.getLat(), point.getLon()));
+            indexFields(context, XLatLonShape.createIndexableFields(name(), point.getLat(), point.getLon()));
             return null;
         }
 
         @Override
         public Void visit(org.elasticsearch.geo.geometry.Polygon polygon) {
-            indexFields(context, LatLonShape.createIndexableFields(name(), toLucenePolygon(polygon)));
+            indexFields(context, XLatLonShape.createIndexableFields(name(), toLucenePolygon(polygon)));
             return null;
         }
 
@@ -205,7 +205,7 @@ public class GeoShapeFieldMapper extends BaseGeoShapeFieldMapper {
         public Void visit(org.elasticsearch.geo.geometry.Rectangle r) {
             Polygon p = new Polygon(new double[]{r.getMinLat(), r.getMinLat(), r.getMaxLat(), r.getMaxLat(), r.getMinLat()},
                 new double[]{r.getMinLon(), r.getMaxLon(), r.getMaxLon(), r.getMinLon(), r.getMinLon()});
-            indexFields(context, LatLonShape.createIndexableFields(name(), p));
+            indexFields(context, XLatLonShape.createIndexableFields(name(), p));
             return null;
         }
     }
