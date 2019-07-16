@@ -66,7 +66,6 @@ import static org.apache.lucene.geo.GeoUtils.orient;
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
  * THIS SOFTWARE.
  *
- * @lucene.experimental
  */
 final public class XTessellator {
     // this is a dumb heuristic to control whether we cut over to sorted morton values
