@@ -82,7 +82,6 @@ public class DateHistogramValuesSourceBuilder extends CompositeValuesSourceBuild
     }
 
     private long interval = 0;
-    private DateTimeZone timeZone = null;
     private DateHistogramInterval dateHistogramInterval;
 
     public DateHistogramValuesSourceBuilder(String name) {
@@ -93,20 +92,12 @@ public class DateHistogramValuesSourceBuilder extends CompositeValuesSourceBuild
         super(in);
         this.interval = in.readLong();
         this.dateHistogramInterval = in.readOptionalWriteable(DateHistogramInterval::new);
-        if (in.readBoolean()) {
-            timeZone = DateTimeZone.forID(in.readString());
-        }
     }
 
     @Override
     protected void innerWriteTo(StreamOutput out) throws IOException {
         out.writeLong(interval);
         out.writeOptionalWriteable(dateHistogramInterval);
-        boolean hasTimeZone = timeZone != null;
-        out.writeBoolean(hasTimeZone);
-        if (hasTimeZone) {
-            out.writeString(timeZone.getID());
-        }
     }
 
     @Override
@@ -116,21 +107,17 @@ public class DateHistogramValuesSourceBuilder extends CompositeValuesSourceBuild
         } else {
             builder.field(Histogram.INTERVAL_FIELD.getPreferredName(), dateHistogramInterval.toString());
         }
-        if (timeZone != null) {
-            builder.field("time_zone", timeZone.toString());
-        }
     }
 
     @Override
     protected int innerHashCode() {
-        return Objects.hash(interval, dateHistogramInterval, timeZone);
+        return Objects.hash(interval, dateHistogramInterval);
     }
 
     @Override
     protected boolean innerEquals(DateHistogramValuesSourceBuilder other) {
         return Objects.equals(interval, other.interval)
-            && Objects.equals(dateHistogramInterval, other.dateHistogramInterval)
-            && Objects.equals(timeZone, other.timeZone);
+            && Objects.equals(dateHistogramInterval, other.dateHistogramInterval);
     }
 
     @Override
@@ -171,24 +158,6 @@ public class DateHistogramValuesSourceBuilder extends CompositeValuesSourceBuild
         }
         this.dateHistogramInterval = dateHistogramInterval;
         return this;
-    }
-
-    /**
-     * Sets the time zone to use for this aggregation
-     */
-    public DateHistogramValuesSourceBuilder timeZone(DateTimeZone timeZone) {
-        if (timeZone == null) {
-            throw new IllegalArgumentException("[timeZone] must not be null: [" + name + "]");
-        }
-        this.timeZone = timeZone;
-        return this;
-    }
-
-    /**
-     * Gets the time zone to use for this aggregation
-     */
-    public DateTimeZone timeZone() {
-        return timeZone;
     }
 
     private Rounding createRounding() {
